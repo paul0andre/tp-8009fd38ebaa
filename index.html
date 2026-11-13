@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Teleprompter Botox</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;500&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#1D130B; --bg2:#2A1C11; --cream:#F6EEE2; --gold:#D9B877; --muted:rgba(246,238,226,.72); --line:rgba(217,184,119,.35); --fs:38px; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--cream); font-family:"Jost",system-ui,sans-serif; font-weight:300; }
+  body { display:flex; flex-direction:column; overflow:hidden; }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+  .top { padding:10px 12px 8px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; background:var(--bg2); }
+  .tabs { display:flex; gap:6px; }
+  .tab { flex:1; padding:9px 6px; border-radius:20px; border:1px solid var(--line); font-weight:500; font-size:14px; letter-spacing:.5px; }
+  .tab[aria-selected="true"] { background:var(--gold); color:#1D130B; border-color:var(--gold); }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .chip { padding:7px 11px; border-radius:16px; border:1px solid var(--line); font-size:13px; font-weight:500; }
+  .chip[aria-pressed="true"] { background:rgba(217,184,119,.22); border-color:var(--gold); color:var(--gold); }
+  .lbl { font-size:12px; color:var(--muted); letter-spacing:1px; }
+  .view { flex:1; min-height:0; display:none; flex-direction:column; }
+  .view.on { display:flex; }
+
+  /* cartões */
+  .card { flex:1; min-height:0; overflow-y:auto; padding:14px 18px 8px; display:flex; flex-direction:column; }
+  .mir .txt, .mir .pose { transform:scaleX(-1); }
+  .fn { display:inline-block; align-self:flex-start; font-weight:500; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); border:1px solid var(--line); border-radius:12px; padding:4px 10px; margin-bottom:8px; }
+  .pose { border:1px solid var(--line); background:rgba(246,238,226,.05); border-radius:12px; padding:10px 12px; font-size:14px; line-height:1.4; color:var(--muted); margin-bottom:12px; }
+  .pose b { color:var(--gold); font-weight:500; }
+  .pose .row { margin:2px 0; }
+  .txt { font-family:"Playfair Display",Georgia,serif; font-weight:600; font-size:var(--fs); line-height:1.22; color:var(--cream); margin:auto 0; padding:6px 0 18px; }
+  .txt em { font-style:italic; color:var(--gold); font-weight:500; }
+  .nav { display:flex; align-items:center; gap:10px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--bg2); }
+  .nav .go { flex:1; padding:15px 8px; border-radius:30px; font-weight:500; font-size:17px; letter-spacing:1px; border:1px solid var(--line); }
+  .nav .go.next { background:var(--gold); color:#1D130B; border-color:var(--gold); flex:1.6; }
+  .nav .go:disabled { opacity:.35; }
+  .count { font-size:13px; color:var(--muted); min-width:56px; text-align:center; }
+  .dots { display:flex; gap:5px; justify-content:center; padding:8px 0 0; }
+  .dots i { width:8px; height:8px; border-radius:50%; background:rgba(246,238,226,.2); }
+  .dots i.on { background:var(--gold); }
+
+  /* rolagem */
+  .roll { flex:1; min-height:0; overflow-y:auto; padding:30vh 22px 60vh; scroll-behavior:auto; }
+  .roll .b { margin-bottom:46px; }
+  .roll .b .fn { margin-bottom:10px; }
+  .guia { position:absolute; left:0; right:0; top:calc(50% + 40px); height:3px; background:rgba(217,184,119,.5); pointer-events:none; display:none; }
+  .rollwrap { position:relative; flex:1; min-height:0; display:flex; flex-direction:column; }
+  .rollwrap.on .guia { display:block; }
+  .speed { display:flex; align-items:center; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--bg2); }
+  .speed input { flex:1; accent-color:#D9B877; }
+  .play { padding:13px 22px; border-radius:30px; background:var(--gold); color:#1D130B; font-weight:500; letter-spacing:1px; }
+
+  /* plano */
+  .plano { overflow-y:auto; padding:16px 18px 40px; }
+  .plano h2 { font-family:"Playfair Display",serif; font-weight:600; font-size:24px; margin:22px 0 8px; color:var(--gold); }
+  .plano h2:first-child { margin-top:4px; }
+  .plano p, .plano li { font-size:16px; line-height:1.5; color:var(--cream); }
+  .plano ul { padding-left:18px; margin:6px 0; }
+  .setup { border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0; background:rgba(246,238,226,.04); }
+  .setup b { color:var(--gold); font-weight:500; }
+  .hk { border-left:3px solid var(--gold); padding:4px 0 4px 12px; margin:12px 0; }
+  .hk .t { font-family:"Playfair Display",serif; font-size:19px; line-height:1.3; }
+  .hk .s { font-size:14px; color:var(--muted); margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-v="card" aria-selected="true">Cartões</button>
+    <button class="tab" role="tab" data-v="roll" aria-selected="false">Rolagem</button>
+    <button class="tab" role="tab" data-v="plano" aria-selected="false">Plano de gravação</button>
+  </div>
+  <div class="tools" id="tools">
+    <span class="lbl">GANCHO</span>
+    <button class="chip" data-h="0" aria-pressed="true">1</button>
+    <button class="chip" data-h="1" aria-pressed="false">2</button>
+    <button class="chip" data-h="2" aria-pressed="false">3</button>
+    <button class="chip" data-h="3" aria-pressed="false">4</button>
+    <button class="chip" id="am" aria-label="Diminuir letra">A−</button>
+    <button class="chip" id="ap" aria-label="Aumentar letra">A+</button>
+    <button class="chip" id="mir" aria-pressed="false">Espelho</button>
+    <button class="chip" id="tp" aria-pressed="true">Posição</button>
+  </div>
+</div>
+
+<section class="view on" id="v-card">
+  <div class="card" id="card"></div>
+  <div class="dots" id="dots"></div>
+  <div class="nav">
+    <button class="go" id="prev">‹ Voltar</button>
+    <div class="count" id="count"></div>
+    <button class="go next" id="next">Próximo ›</button>
+  </div>
+</section>
+
+<section class="view" id="v-roll">
+  <div class="rollwrap" id="rollwrap"><div class="roll" id="roll"></div><div class="guia"></div></div>
+  <div class="speed">
+    <button class="play" id="play">▶ Rolar</button>
+    <span class="lbl">DEVAGAR</span><input type="range" id="spd" min="10" max="120" value="45"><span class="lbl">RÁPIDO</span>
+  </div>
+</section>
+
+<section class="view" id="v-plano"><div class="plano" id="plano"></div></section>
+
+<script>
+// ---------------- conteúdo ----------------
+const HOOKS = [
+  { n:1, tipo:"Identificação (a aprovada)", txt:"Você quer aplicar o seu botox, mas eu sei que a sua vida anda muito corrida.",
+    pose:{ setup:"A · De frente", cam:"Plano busto, olhar direto na lente, já falando no primeiro instante.", gesto:"Leve inclinação de cabeça no “eu sei”. Sem sorrir muito.", ed:"Corte seco depois da frase. Título na tela no segundo zero." } },
+  { n:2, tipo:"Curiosidade (data limite)", txt:"O seu botox tem uma data limite pra ficar pronto antes das festas. Você sabe qual é a sua?",
+    pose:{ setup:"A · De frente, um pouco mais perto", cam:"Plano busto fechado, olhar na lente.", gesto:"Levanta um dedo em “data limite” e faz a pergunta com as sobrancelhas.", ed:"Zoom in lento de 1,00 a 1,06 durante a frase." } },
+  { n:3, tipo:"O que ninguém quer ouvir", txt:"Eu preciso te falar uma coisa que ninguém quer ouvir. Se a sua festa é em dezembro, a hora de pensar no botox é agora.",
+    pose:{ setup:"A · De frente, séria", cam:"Plano busto, olhar firme na lente.", gesto:"Abaixa o tom em “ninguém quer ouvir” e faz uma pausa de meio segundo antes de continuar.", ed:"Sem zoom. Legenda com “agora” em dourado." } },
+  { n:4, tipo:"Ação (olha o calendário)", txt:"Pega o celular e olha quantos dias faltam pro Natal. Agora guarda esse número, porque ele muda o seu botox.",
+    pose:{ setup:"E · De frente, com o celular na mão", cam:"Plano busto. Ela olha para o celular e levanta o olhar para a lente no “guarda esse número”.", gesto:"Mostra o celular para a câmera e depois guarda.", ed:"Corte para o calendário na tela." } }
+];
+
+const BLOCOS = [
+  { fn:"Gancho", hook:true },
+  { fn:"Saudação", txt:"Oi, gente!",
+    pose:{ setup:"B · Três-quartos esquerdo", cam:"Corpo virado uns 45° para a esquerda, rosto volta para a lente. Plano busto.", gesto:"Meio sorriso e um aceno curto de mão.", ed:"Zoom out leve em relação ao gancho. Nome e @ pequenos na tela.", s:"2 s" } },
+  { fn:"Objeção", txt:"Toda semana alguém me diz que quer aplicar, mas está sem tempo por causa da correria de final de ano.",
+    pose:{ setup:"B · Três-quartos esquerdo", cam:"Mesma posição da saudação, sem cortar.", gesto:"Expressão de quem escuta a mesma frase toda semana. Faz o “correria” com um gesto circular da mão.", ed:"Legenda com “sem tempo” em dourado.", s:"6 s" } },
+  { fn:"Objeção", txt:"A gente sabe que são muitos compromissos, e você vai deixando pra depois.",
+    pose:{ setup:"A · De frente", cam:"Gira o corpo de volta para a câmera no “e você vai deixando”.", gesto:"Ombros caem de leve e dá um meio suspiro no “pra depois”.", ed:"Legenda com “depois” em dourado.", s:"5 s" } },
+  { fn:"Loop aberto", txt:"Mas tem uma coisa que você precisa saber, e eu vou te contar agora. Não pula esse vídeo.",
+    pose:{ setup:"C · De frente, mais perto", cam:"Aproxima o rosto: plano fechado, queixo quase na altura do centro da tela.", gesto:"Um dedo em “uma coisa”. Sorriso leve e aponta para a câmera em “Não pula esse vídeo”.", ed:"Zoom in lento de 1,00 a 1,10.", s:"5 s" } },
+  { fn:"Lista de eventos", txt:"Final de ano tem festa da escola, confraternização do trabalho, festa de família e mais um monte de coisa.",
+    pose:{ setup:"D · Três-quartos direito", cam:"Vira para o outro lado (direito) e olha um pouco fora da lente, como quem lembra.", gesto:"Conta nos dedos: escola, trabalho, família.", ed:"Cartões rápidos na tela, um por evento.", s:"7 s" } },
+  { fn:"A conta", txt:"A toxina botulínica leva até 15 dias pra mostrar o efeito completo.",
+    pose:{ setup:"E · De frente, com calendário ou agenda", cam:"Volta de frente, segurando um calendário, uma agenda ou o celular com a tela do calendário.", gesto:"Olha para o calendário e, ao dizer “15 dias”, olha para a lente e mostra com os dedos.", ed:"Zoom in até “15 dias” e o calendário animado na tela.", s:"5 s" } },
+  { fn:"A conta", txt:"Então esse tempo precisa entrar na sua conta antes dos eventos.",
+    pose:{ setup:"A · De frente", cam:"Plano busto normal.", gesto:"Gesto de “colocar na conta” com a mão aberta, de cima para baixo.", ed:"Zoom out de 1,10 para 1,00.", s:"4 s" } },
+  { fn:"Escassez", txt:"Aqui na clínica a agenda de final de ano sempre fica corrida.",
+    pose:{ setup:"B · Três-quartos esquerdo", cam:"Volta para o lado esquerdo, igual à saudação.", gesto:"Sobrancelha levantada, tom de “olha só”.", ed:"Corte seco, sem zoom.", s:"4 s" } },
+  { fn:"Chamada", txt:"Então marque o seu procedimento o quanto antes, pelo Direct ou WhatsApp.",
+    pose:{ setup:"F · De frente, final", cam:"De frente, plano busto, olhar na lente.", gesto:"Sorri e aponta para baixo em “Direct ou WhatsApp”. Fica 1 segundo parada no fim, sorrindo.", ed:"Número (88) 92001-8454 na tela e a logo com o nome no fecho.", s:"5 s" } }
+];
+
+// ---------------- estado ----------------
+let hi = 0, idx = 0, fs = 38,mirror = false, showPose = true, view = "card";
+const $ = s => document.querySelector(s);
+const blk = i => { const b = BLOCOS[i]; if (!b.hook) return b; const h = HOOKS[hi]; return { fn:"Gancho " + h.n + " · " + h.tipo, txt:h.txt, pose:Object.assign({ s:"4 s" }, h.pose) }; };
+function poseHTML(p) {
+  return '<div class="pose"><div class="row"><b>' + p.setup + '</b> · ' + (p.s || '') + '</div>' +
+    '<div class="row"><b>Câmera:</b> ' + p.cam + '</div>' +
+    '<div class="row"><b>Gesto:</b> ' + p.gesto + '</div>' +
+    '<div class="row"><b>Edição:</b> ' + p.ed + '</div></div>';
+}
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "<"); }
+
+function renderCard() {
+  const b = blk(idx);
+  $("#card").innerHTML = '<span class="fn">' + esc(b.fn) + '</span>' + (showPose ? poseHTML(b.pose) : '') + '<div class="txt">' + esc(b.txt) + '</div>';
+  $("#card").classList.toggle("mir", mirror);
+  $("#card").scrollTop = 0;
+  $("#count").textContent = (idx + 1) + " / " + BLOCOS.length;
+  $("#prev").disabled = idx === 0; $("#next").disabled = idx === BLOCOS.length - 1;
+  $("#dots").innerHTML = BLOCOS.map((_, i) => '<i class="' + (i === idx ? "on" : "") + '"></i>').join("");
+}
+function renderRoll() {
+  $("#roll").innerHTML = BLOCOS.map((_, i) => { const b = blk(i); return '<div class="b"><span class="fn">' + esc(b.fn) + '</span><div class="txt">' + esc(b.txt) + '</div></div>'; }).join("");
+  $("#roll").classList.toggle("mir", mirror);
+}
+function renderPlano() {
+  const sets = [
+    ["A · De frente", "Câmera na altura dos olhos, plano busto, olhar na lente. É a posição base."],
+    ["B · Três-quartos esquerdo", "Corpo virado uns 45° para a esquerda, rosto volta para a lente."],
+    ["C · De frente, mais perto", "Plano fechado no rosto. Dá intimidade e aproveita o zoom in da edição."],
+    ["D · Três-quartos direito", "Vira para o lado oposto e olha um pouco fora da lente, como quem lembra."],
+    ["E · De frente, com apoio", "Segura calendário, agenda ou o celular com o calendário aberto."],
+    ["F · De frente, final", "Plano busto, sorriso e gesto apontando para baixo."]
+  ];
+  $("#plano").innerHTML =
+    '<h2>Como gravar</h2><ul>' +
+    '<li>Celular na vertical, câmera traseira, 4K a 30 fps, firme no tripé.</li>' +
+    '<li>Olhe para a lente, não para a tela. Deixe o texto o mais perto possível da câmera.</li>' +
+    '<li>Grave cada bloco 2 ou 3 vezes e faça 1 segundo de pausa no fim. A edição corta aí.</li>' +
+    '<li>Mesma roupa, mesma luz e mesmo fundo do começo ao fim. Sem desfoque artificial.</li>' +
+    '<li>Troque de posição a cada bloco: isso dá ritmo e deixa o vídeo menos parado.</li></ul>' +
+    '<h2>As 6 posições</h2>' + sets.map(s => '<div class="setup"><b>' + s[0] + '</b><br>' + s[1] + '</div>').join('') +
+    '<h2>Ordem do vídeo</h2><ul>' + BLOCOS.map((_, i) => { const b = blk(i); return '<li><b>' + esc(b.fn) + '</b>: ' + b.pose.setup + ' (' + (b.pose.s || '') + ')</li>'; }).join('') + '</ul>' +
+    '<h2>4 ganchos para gravar</h2><p>Grave os quatro, um depois do outro, e escolha o melhor na edição. O resto do roteiro é igual.</p>' +
+    HOOKS.map(h => '<div class="hk"><div class="s">GANCHO ' + h.n + ' · ' + h.tipo + '</div><div class="t">' + esc(h.txt) + '</div><div class="s"><b>' + h.pose.setup + '.</b> ' + h.pose.gesto + '</div></div>').join('');
+}
+
+// ---------------- navegação ----------------
+function setView(v) {
+  view = v; stopRoll();
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.v === v));
+  document.querySelectorAll(".view").forEach(x => x.classList.remove("on"));
+  $("#v-" + v).classList.add("on");
+  $("#rollwrap").classList.toggle("on", v === "roll");
+  $("#tools").style.display = v === "plano" ? "none" : "flex";
+  $("#tp").style.display = v === "card" ? "" : "none";
+  if (v === "roll") renderRoll();
+  if (v === "plano") renderPlano();
+  if (v === "card") renderCard();
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => setView(t.dataset.v));
+document.querySelectorAll("[data-h]").forEach(c => c.onclick = () => {
+  hi = +c.dataset.h;
+  document.querySelectorAll("[data-h]").forEach(x => x.setAttribute("aria-pressed", x === c));
+  if (view === "card") renderCard(); if (view === "roll") renderRoll();
+});
+$("#next").onclick = () => { if (idx < BLOCOS.length - 1) { idx++; renderCard(); } };
+$("#prev").onclick = () => { if (idx > 0) { idx--; renderCard(); } };
+$("#card").onclick = e => { if (e.target.closest(".pose")) return; const r = $("#card").getBoundingClientRect(); (e.clientX - r.left > r.width / 2) ? $("#next").click() : $("#prev").click(); };
+document.addEventListener("keydown", e => { if (view !== "card") return; if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); $("#next").click(); } if (e.key === "ArrowLeft") $("#prev").click(); });
+function setFs(v) { fs = Math.max(24, Math.min(80, v)); document.documentElement.style.setProperty("--fs", fs + "px"); }
+$("#am").onclick = () => setFs(fs - 4); $("#ap").onclick = () => setFs(fs + 4);
+$("#mir").onclick = e => { mirror = !mirror; e.currentTarget.setAttribute("aria-pressed", mirror); if (view === "card") renderCard(); else renderRoll(); };
+$("#tp").onclick = e => { showPose = !showPose; e.currentTarget.setAttribute("aria-pressed", showPose); renderCard(); };
+
+// ---------------- rolagem automática ----------------
+let raf = 0, last = 0, rolling = false;
+function stopRoll() { rolling = false; cancelAnimationFrame(raf); $("#play").textContent = "▶ Rolar"; }
+function tick(t) { if (!rolling) return; const el = $("#roll"); if (last) el.scrollTop += (t - last) / 1000 * (+$("#spd").value); last = t; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) { stopRoll(); return; } raf = requestAnimationFrame(tick); }
+$("#play").onclick = () => { if (rolling) return stopRoll(); rolling = true; last = 0; $("#play").textContent = "❚❚ Pausar"; raf = requestAnimationFrame(tick); };
+$("#roll").addEventListener("click", () => { if (rolling) stopRoll(); });
+
+// tela sempre acesa durante a gravação
+try { if (navigator.wakeLock) navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {}
+renderCard(); setView("card");
+</script>
+</body>
+</html>
